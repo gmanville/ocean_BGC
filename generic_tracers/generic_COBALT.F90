@@ -319,6 +319,9 @@ contains
        do_nh3_diag=.false.
     end if
 
+    ! Set dms on/off (temporary)
+    do_dms_diag=.true.
+
     ! add MOM6-style interfaces for a parameter file
     call get_COBALT_param_file(param_file)
     call log_version(param_file, "COBALT", version, "", log_to_all=.true., debugging=.true.)
@@ -2262,6 +2265,9 @@ contains
     integer :: yearday
     real :: rev_angle, dec_angle, temp_arg
 
+    !for dms
+    real :: log10dmsp_strat
+
     logical ::  phos_nh3_override
 
     real, dimension(:,:,:), Allocatable :: ztop, zmid, zbot
@@ -2271,6 +2277,10 @@ contains
     real, dimension(:,:,:), Allocatable :: pre_totfe, net_srcfe, post_totfe
     real, dimension(:,:,:), Allocatable :: pre_totc, net_srcc, post_totc
     real, dimension(:,:),   Allocatable :: pka_nh3,phos_nh3_exchange
+   !  real, dimension(:,:),   Allocatable :: dmsos
+      ! Declare variables
+      !real, dimension(:,:), Allocatable :: log10zeu!, f_zeu, f_zeu_mld, log10dmsp_mix, f_dmspos_mix, log10dmsp_strat, f_dmspos_strat, log10dmsp, f_dmspos, log10dms, f_dmsos
+      !real, dimension(:), Allocatable   :: alpha, beta, gamma
 
     real :: tr,ltr
     real :: imbal
@@ -2848,6 +2858,55 @@ contains
     enddo;  enddo ; enddo !} i,j,k
     end if
 
+    !dms
+    if (do_dms_diag) then
+
+      ! cobalt%zeu(:,:)           = 0.
+      ! cobalt%zeu_mld(:,:)       = 0.
+      ! cobalt%dmspos_mix(:,:)    = 0.
+      cobalt%dmspos_strat(:,:)  = 0.
+      ! cobalt%dmspos(:,:)        = 0.
+      ! cobalt%dmsos(:,:)         = 0.
+   
+      ! alph_dms = -1.237
+      ! beta_dms = 0.578
+      ! gamma_dms = 0.0180
+
+      do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
+
+         ! Euphotic layer depth model (Morel et al. 2007)
+         !log10zeu(i, j) = 1.524 - (0.436 * log10(chl(i, j))) - (0.0145 * (log10(chl(i, j))**2)) + (0.0186 * (log10(chl(i, j))**3))
+         ! f_zeu(i, j) = 10.0 ** log10zeu(i, j)
+         ! f_zeu_mld(i, j) = f_zeu(i, j) / mld(i, j)
+
+         ! ! Mixed water column model
+         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(f_zeu_mld(i, j)))
+         ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
+
+         ! ! Stratified water column model (tmp_dms)
+         log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
+                         + (0.06 * Temp(i,j,1)) - (0.0024 * (Temp(i,j,1)**2))
+         
+         cobalt%dmspos_strat(i, j) = 10.0 ** log10dmsp_strat * grid_tmask(i,j,1)
+
+         ! ! Condition for selecting mixed or stratified model
+         ! if (pic(i, j) < 1.5 .or. f_zeu_mld(i, j) < 1.0) then
+         !    log10dmsp(i, j) = log10dmsp_mix(i, j)
+         ! else
+         !    log10dmsp(i, j) = log10dmsp_strat(i, j)
+         ! end if
+         ! f_dmspos(i, j) = 10.0 ** log10dmsp(i, j)
+
+         ! ! DMS regression model
+         ! log10dms(i, j) = alpha + beta * log10dmsp(i, j) + gamma * sfc_irrad(i, j)
+         ! f_dmsos(i, j) = 10.0 ** log10dms(i, j)
+
+      enddo;  enddo ; enddo !} i,j,k
+      !   used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
+      !   model_time, rmask = grid_tmask(:,:,1),&
+      !   is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    end if
 
     !
     ! Calculate the phytoplankton growth rate calculation based on Geider et al. (1997).
@@ -6392,6 +6451,8 @@ contains
     allocate(cobalt%rho_test(isd:ied, jsd:jed, 1:nk)) ; cobalt%rho_test=0.0
     allocate(cobalt%f_chl(isd:ied, jsd:jed, 1:nk))        ; cobalt%f_chl=0.0
     if (do_nh3_diag) allocate(cobalt%f_nh3(isd:ied, jsd:jed, 1:nk))        ; cobalt%f_nh3=0.0
+    !for DMS diagnostics
+    allocate(cobalt%dmspos_strat(isd:ied, jsd:jed)) ; cobalt%dmspos_strat=0.0
     allocate(cobalt%f_co3_ion(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_co3_ion=0.0
     allocate(cobalt%f_htotal(isd:ied, jsd:jed, 1:nk))     ; cobalt%f_htotal=0.0
     allocate(cobalt%f_irr_aclm(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_irr_aclm=0.0
@@ -7208,6 +7269,8 @@ contains
     deallocate(cobalt%z_sat_calc)
     deallocate(cobalt%mask_z_sat_arag)
     deallocate(cobalt%mask_z_sat_calc)
+!DMS diagnostics
+    deallocate(cobalt%dmspos_strat)
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem
     deallocate(cobalt%f_alk_int_100)

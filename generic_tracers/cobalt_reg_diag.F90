@@ -3378,6 +3378,14 @@ module COBALT_reg_diag
 ! 2-D fields
 ! sfc tracers
 
+    vardesc_temp = vardesc("dmspos_strat","Surface concentration of DMSP using Stratfied Model",'h','1','s','mol m-3','f')
+    cobalt%id_dmspos_strat     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
+
+!     vardesc_temp = vardesc("dmsos","Surface concentration of DMS",'h','1','s','mol m-3','f')
+!     cobalt%id_dmsos     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+!          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
+
     vardesc_temp = vardesc("dissicos_raw","Surface Dissolved Inorganic Carbon Concentration",'h','1','s','mol m-3','f')
     cobalt%id_dissicos = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &

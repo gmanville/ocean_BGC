@@ -20,6 +20,9 @@ module cobalt_types
   ! are overwritten by generic_tracer_nml namelist
   logical, public :: do_nh3_diag                             !< logic for setting NH3 diagnostic tracer field 
 
+  ! Set dms on/off (temporary)
+  logical, public :: do_dms_diag = .false.                   !< logic for setting DMS diagnostic (false by default, turn on in COBALT)
+
 ! Namelist Options
 
   character(len=10), public ::  co2_calc = 'mocsy'           !< carbonate formalation options. Default is 'mocsy'
@@ -44,6 +47,7 @@ module cobalt_types
                                             !! 2-update with no temperature dependence
                                             !! 3-update with temperature dependence
 
+  
   ! parameters      
   integer, parameter, public :: NUM_PHYTO = 4 !< total number of phytoplankton groups
   integer, parameter, public :: NUM_ZOO = 3   !< total number of zooplankton groups
@@ -543,6 +547,9 @@ module cobalt_types
      logical, dimension(:,:), ALLOCATABLE ::  &
           mask_z_sat_arag,&
           mask_z_sat_calc
+
+     real, dimension(:,:), allocatable :: &
+          dmspos_strat
 
      real, dimension(:,:,:), ALLOCATABLE ::  &
           f_alk,&				! Other prognostic variables
@@ -1264,6 +1271,7 @@ module cobalt_types
           id_o2sat          = -1, &
           id_no3_cmip       = -1, &
           id_pka_nh3        = -1, &
+          id_dmspos_strat   = -1, &          
           id_nh4_cmip       = -1, &
           id_po4_cmip       = -1, &
           id_dfe            = -1, &

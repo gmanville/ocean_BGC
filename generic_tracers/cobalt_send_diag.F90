@@ -2344,6 +2344,13 @@ module COBALT_send_diag
 
 !==============================================================================================================
 
+! DMS diagnostics
+        used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
+        model_time, rmask = grid_tmask(:,:,1),&
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+        
+!==============================================================================================================
+
     end subroutine cobalt_send_diagnostics   
 
 end module COBALT_send_diag   
