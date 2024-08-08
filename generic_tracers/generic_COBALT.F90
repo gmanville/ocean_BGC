@@ -2858,56 +2858,6 @@ contains
     enddo;  enddo ; enddo !} i,j,k
     end if
 
-    !dms
-    if (do_dms_diag) then
-
-      ! cobalt%zeu(:,:)           = 0.
-      ! cobalt%zeu_mld(:,:)       = 0.
-      ! cobalt%dmspos_mix(:,:)    = 0.
-      cobalt%dmspos_strat(:,:)  = 0.
-      ! cobalt%dmspos(:,:)        = 0.
-      ! cobalt%dmsos(:,:)         = 0.
-   
-      ! alph_dms = -1.237
-      ! beta_dms = 0.578
-      ! gamma_dms = 0.0180
-
-      do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
-
-         ! Euphotic layer depth model (Morel et al. 2007)
-         !log10zeu(i, j) = 1.524 - (0.436 * log10(chl(i, j))) - (0.0145 * (log10(chl(i, j))**2)) + (0.0186 * (log10(chl(i, j))**3))
-         ! f_zeu(i, j) = 10.0 ** log10zeu(i, j)
-         ! f_zeu_mld(i, j) = f_zeu(i, j) / mld(i, j)
-
-         ! ! Mixed water column model
-         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(f_zeu_mld(i, j)))
-         ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
-
-         ! ! Stratified water column model (tmp_dms)
-         log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
-                         + (0.06 * Temp(i,j,1)) - (0.0024 * (Temp(i,j,1)**2))
-         
-         cobalt%dmspos_strat(i, j) = 10.0 ** log10dmsp_strat * grid_tmask(i,j,1)
-
-         ! ! Condition for selecting mixed or stratified model
-         ! if (pic(i, j) < 1.5 .or. f_zeu_mld(i, j) < 1.0) then
-         !    log10dmsp(i, j) = log10dmsp_mix(i, j)
-         ! else
-         !    log10dmsp(i, j) = log10dmsp_strat(i, j)
-         ! end if
-         ! f_dmspos(i, j) = 10.0 ** log10dmsp(i, j)
-
-         ! ! DMS regression model
-         ! log10dms(i, j) = alpha + beta * log10dmsp(i, j) + gamma * sfc_irrad(i, j)
-         ! f_dmsos(i, j) = 10.0 ** log10dms(i, j)
-
-      enddo;  enddo ; enddo !} i,j,k
-      !   used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
-      !   model_time, rmask = grid_tmask(:,:,1),&
-      !   is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
-
-    end if
-
     !
     ! Calculate the phytoplankton growth rate calculation based on Geider et al. (1997).
     ! This section also allows for low- and high-light adapted "ecotypes" (e.g., Moore
@@ -5003,6 +4953,58 @@ contains
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Silica')
          endif
     enddo; enddo ; enddo  !} i,j,k
+
+
+    !dms
+    if (do_dms_diag) then
+
+      ! cobalt%zeu(:,:)           = 0.
+      ! cobalt%zeu_mld(:,:)       = 0.
+      ! cobalt%dmspos_mix(:,:)    = 0.
+      cobalt%dmspos_strat(:,:)  = 0.
+      ! cobalt%dmspos(:,:)        = 0.
+      ! cobalt%dmsos(:,:)         = 0.
+   
+      ! alph_dms = -1.237
+      ! beta_dms = 0.578
+      ! gamma_dms = 0.0180
+
+      do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
+
+         ! Euphotic layer depth model (Morel et al. 2007)
+         !log10zeu(i, j) = 1.524 - (0.436 * log10(chl(i, j))) - (0.0145 * (log10(chl(i, j))**2)) + (0.0186 * (log10(chl(i, j))**3))
+         ! f_zeu(i, j) = 10.0 ** log10zeu(i, j)
+         ! f_zeu_mld(i, j) = f_zeu(i, j) / mld(i, j)
+
+         ! ! Mixed water column model
+         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(f_zeu_mld(i, j)))
+         ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
+
+         ! ! Stratified water column model (tmp_dms)
+         log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
+                         + (0.06 * Temp(i,j,1)) - (0.0024 * (Temp(i,j,1)**2))
+         
+         cobalt%dmspos_strat(i, j) = 10.0 ** log10dmsp_strat * grid_tmask(i,j,1)
+
+         ! ! Condition for selecting mixed or stratified model
+         ! if (pic(i, j) < 1.5 .or. f_zeu_mld(i, j) < 1.0) then
+         !    log10dmsp(i, j) = log10dmsp_mix(i, j)
+         ! else
+         !    log10dmsp(i, j) = log10dmsp_strat(i, j)
+         ! end if
+         ! f_dmspos(i, j) = 10.0 ** log10dmsp(i, j)
+
+         ! ! DMS regression model
+         ! log10dms(i, j) = alpha + beta * log10dmsp(i, j) + gamma * sfc_irrad(i, j)
+         ! f_dmsos(i, j) = 10.0 ** log10dms(i, j)
+
+      enddo;  enddo ; enddo !} i,j,k
+      !   used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
+      !   model_time, rmask = grid_tmask(:,:,1),&
+      !   is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+    end if
+
 
 
     !
