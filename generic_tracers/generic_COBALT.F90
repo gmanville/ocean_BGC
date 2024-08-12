@@ -2266,6 +2266,7 @@ contains
     real :: rev_angle, dec_angle, temp_arg
 
     !for dms
+    real :: log10zeu
     real :: log10dmsp_strat
 
     logical ::  phos_nh3_override
@@ -4958,10 +4959,10 @@ contains
     !dms
     if (do_dms_diag) then
 
-      ! cobalt%zeu(:,:)           = 0.
-      ! cobalt%zeu_mld(:,:)       = 0.
-      ! cobalt%dmspos_mix(:,:)    = 0.
-      cobalt%dmspos_strat(:,:)  = 0.
+      cobalt%dmsp_zeu(:,:)           = 0.
+      ! cobalt%f_zeu_mld(:,:)       = 0.
+      ! cobalt%dmspos_mix(:,:)      = 0.
+      cobalt%dmspos_strat(:,:)    = 0.
       ! cobalt%dmspos(:,:)        = 0.
       ! cobalt%dmsos(:,:)         = 0.
    
@@ -4972,19 +4973,35 @@ contains
       do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
 
          ! Euphotic layer depth model (Morel et al. 2007)
-         !log10zeu(i, j) = 1.524 - (0.436 * log10(chl(i, j))) - (0.0145 * (log10(chl(i, j))**2)) + (0.0186 * (log10(chl(i, j))**3))
-         ! f_zeu(i, j) = 10.0 ** log10zeu(i, j)
-         ! f_zeu_mld(i, j) = f_zeu(i, j) / mld(i, j)
+         log10zeu = 1.524 - (0.436 * log10(max(0.0,cobalt%f_chl(i,j,1)))) &
+                          - (0.0145 * (log10(max(0.0,cobalt%f_chl(i,j,1)))**2)) &
+                          + (0.0186 * (log10(max(0.0,cobalt%f_chl(i,j,1)))**3))
+
+         cobalt%dmsp_zeu(i, j) = (10.0 ** log10zeu) * grid_tmask(i,j,1)
+         
+         ! cobalt%f_zeu_mld(i, j) = cobalt%dmsp_zeu(i, j) / cobalt%mld_aclm(i,j)
 
          ! ! Mixed water column model
          ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(f_zeu_mld(i, j)))
          ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
 
+         ! log10dmsp_mix = 1.74 + (0.81 * log10(max(0.0,cobalt%f_chl(i,j,1)))) + (0.6 * log10(max(0.0,cobalt%f_zeu_mld(i,j))))
+         ! cobalt%dmspos_mix(i, j) = ((10.0 ** log10dmsp_mix) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
+
          ! ! Stratified water column model (tmp_dms)
-         log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
+         ! log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
+         !                 + (0.06 * Temp(i,j,1)) - (0.0024 * (Temp(i,j,1)**2))
+         log10dmsp_strat = 1.70 + (1.14 * log10(max(0.0,cobalt%f_chl(i,j,1)))) + (0.44 * (log10(max(0.0,cobalt%f_chl(i,j,1)))**2)) &
                          + (0.06 * Temp(i,j,1)) - (0.0024 * (Temp(i,j,1)**2))
          
-         cobalt%dmspos_strat(i, j) = 10.0 ** log10dmsp_strat * grid_tmask(i,j,1)
+         cobalt%dmspos_strat(i, j) = ((10.0 ** log10dmsp_strat) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
+
+         write(*,*)  'dmsp_zeu ',           'i',i,'j',j,cobalt%dmsp_zeu(i, j)
+         write(*,*)  'dmspos_strat ',       'i',i,'j',j,cobalt%dmspos_strat(i, j)
+         write(*,*)  'log10zeu ',           'i',i,'j',j,log10zeu
+         write(*,*)  'log10dmspos_strat ',  'i',i,'j',j,log10dmsp_strat
+         write(*,*)  'f_chl ',              'i',i,'j',j,cobalt%f_chl(i,j,1)
+         write(*,*)  'Temp ',               'i',i,'j',j,Temp(i,j,1)
 
          ! ! Condition for selecting mixed or stratified model
          ! if (pic(i, j) < 1.5 .or. f_zeu_mld(i, j) < 1.0) then
@@ -4999,10 +5016,6 @@ contains
          ! f_dmsos(i, j) = 10.0 ** log10dms(i, j)
 
       enddo;  enddo ; enddo !} i,j,k
-      !   used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
-      !   model_time, rmask = grid_tmask(:,:,1),&
-      !   is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
-
     end if
 
 
@@ -5887,6 +5900,16 @@ contains
     if (allocated(pka_nh3)) deallocate(pka_nh3)
     deallocate(phos_nh3_exchange)
 !
+! check dmspos_strat output
+    write(*,*)  'dmsp_zeu output check ',           cobalt%dmsp_zeu
+    write(*,*)  'dmspos_strat output check ',       cobalt%dmspos_strat
+    write(*,*)  'log10zeu output check ',           log10zeu
+    write(*,*)  'log10dmspos_strat output check ',  log10dmsp_strat
+    write(*,*)  'f_chl output check ',              cobalt%f_chl
+    write(*,*)  'Temp output check ',               Temp
+! write(*,*)  'Rho_0 output check ',            cobalt%Rho_0
+
+!
 !---------------------------------------------------------------------
 !
 ! Send phytoplankton diagnostic data
@@ -6454,7 +6477,8 @@ contains
     allocate(cobalt%f_chl(isd:ied, jsd:jed, 1:nk))        ; cobalt%f_chl=0.0
     if (do_nh3_diag) allocate(cobalt%f_nh3(isd:ied, jsd:jed, 1:nk))        ; cobalt%f_nh3=0.0
     !for DMS diagnostics
-    allocate(cobalt%dmspos_strat(isd:ied, jsd:jed)) ; cobalt%dmspos_strat=0.0
+    allocate(cobalt%dmsp_zeu(isd:ied, jsd:jed))           ; cobalt%dmsp_zeu=0.0
+    allocate(cobalt%dmspos_strat(isd:ied, jsd:jed))       ; cobalt%dmspos_strat=0.0
     allocate(cobalt%f_co3_ion(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_co3_ion=0.0
     allocate(cobalt%f_htotal(isd:ied, jsd:jed, 1:nk))     ; cobalt%f_htotal=0.0
     allocate(cobalt%f_irr_aclm(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_irr_aclm=0.0
@@ -7272,6 +7296,7 @@ contains
     deallocate(cobalt%mask_z_sat_arag)
     deallocate(cobalt%mask_z_sat_calc)
 !DMS diagnostics
+    deallocate(cobalt%dmsp_zeu)
     deallocate(cobalt%dmspos_strat)
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem
