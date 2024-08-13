@@ -549,7 +549,9 @@ module cobalt_types
           mask_z_sat_calc
 
      real, dimension(:,:), allocatable :: &
-          dmsp_zeu
+          dmsp_zeu,&
+          dmsp_zeu_mld,&
+          dmspos_mix,&
           dmspos_strat
 
      real, dimension(:,:,:), ALLOCATABLE ::  &
@@ -1273,6 +1275,8 @@ module cobalt_types
           id_no3_cmip       = -1, &
           id_pka_nh3        = -1, &
           id_dmsp_zeu       = -1, &          
+          id_dmsp_zeu_mld   = -1, &          
+          id_dmspos_mix     = -1, &
           id_dmspos_strat   = -1, &          
           id_nh4_cmip       = -1, &
           id_po4_cmip       = -1, &

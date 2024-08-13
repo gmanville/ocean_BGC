@@ -2267,7 +2267,11 @@ contains
 
     !for dms
     real :: log10zeu
+    real :: log10dmsp_mix
     real :: log10dmsp_strat
+   !  real :: dms_alpha
+   !  real :: dms_beta
+   !  real :: dms_gamma
 
     logical ::  phos_nh3_override
 
@@ -2278,10 +2282,6 @@ contains
     real, dimension(:,:,:), Allocatable :: pre_totfe, net_srcfe, post_totfe
     real, dimension(:,:,:), Allocatable :: pre_totc, net_srcc, post_totc
     real, dimension(:,:),   Allocatable :: pka_nh3,phos_nh3_exchange
-   !  real, dimension(:,:),   Allocatable :: dmsos
-      ! Declare variables
-      !real, dimension(:,:), Allocatable :: log10zeu!, f_zeu, f_zeu_mld, log10dmsp_mix, f_dmspos_mix, log10dmsp_strat, f_dmspos_strat, log10dmsp, f_dmspos, log10dms, f_dmsos
-      !real, dimension(:), Allocatable   :: alpha, beta, gamma
 
     real :: tr,ltr
     real :: imbal
@@ -4959,16 +4959,16 @@ contains
     !dms
     if (do_dms_diag) then
 
-      cobalt%dmsp_zeu(:,:)           = 0.
-      ! cobalt%f_zeu_mld(:,:)       = 0.
-      ! cobalt%dmspos_mix(:,:)      = 0.
+      cobalt%dmsp_zeu(:,:)        = 0.
+      cobalt%dmsp_zeu_mld(:,:)    = 0.
+      cobalt%dmspos_mix(:,:)      = 0.
       cobalt%dmspos_strat(:,:)    = 0.
       ! cobalt%dmspos(:,:)        = 0.
       ! cobalt%dmsos(:,:)         = 0.
    
-      ! alph_dms = -1.237
-      ! beta_dms = 0.578
-      ! gamma_dms = 0.0180
+      ! dms_alpha = -1.237
+      ! dms_beta = 0.578
+      ! dms_gamma = 0.0180
 
       do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
 
@@ -4979,14 +4979,14 @@ contains
 
          cobalt%dmsp_zeu(i, j) = (10.0 ** log10zeu) * grid_tmask(i,j,1)
          
-         ! cobalt%f_zeu_mld(i, j) = cobalt%dmsp_zeu(i, j) / cobalt%mld_aclm(i,j)
+         cobalt%dmsp_zeu_mld(i, j) = cobalt%dmsp_zeu(i, j) / cobalt%mld_aclm(i,j)   ! also need to be * grid_tmask(i,j,1)?
 
          ! ! Mixed water column model
-         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(f_zeu_mld(i, j)))
+         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(dmsp_zeu_mld(i, j)))
          ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
 
-         ! log10dmsp_mix = 1.74 + (0.81 * log10(max(0.0,cobalt%f_chl(i,j,1)))) + (0.6 * log10(max(0.0,cobalt%f_zeu_mld(i,j))))
-         ! cobalt%dmspos_mix(i, j) = ((10.0 ** log10dmsp_mix) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
+         log10dmsp_mix = 1.74 + (0.81 * log10(max(0.0,cobalt%f_chl(i,j,1)))) + (0.6 * log10(max(0.0,cobalt%dmsp_zeu_mld(i,j))))
+         cobalt%dmspos_mix(i, j) = ((10.0 ** log10dmsp_mix) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
 
          ! ! Stratified water column model (tmp_dms)
          ! log10dmsp_strat = 1.70 + (1.14 * log10(cobalt%f_chl(i,j,1)* cobalt%Rho_0)) + (0.44 * (log10(cobalt%f_chl(i,j,1) * cobalt%Rho_0)**2)) &
@@ -4996,12 +4996,12 @@ contains
          
          cobalt%dmspos_strat(i, j) = ((10.0 ** log10dmsp_strat) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
 
-         write(*,*)  'dmsp_zeu ',           'i',i,'j',j,cobalt%dmsp_zeu(i, j)
-         write(*,*)  'dmspos_strat ',       'i',i,'j',j,cobalt%dmspos_strat(i, j)
-         write(*,*)  'log10zeu ',           'i',i,'j',j,log10zeu
-         write(*,*)  'log10dmspos_strat ',  'i',i,'j',j,log10dmsp_strat
-         write(*,*)  'f_chl ',              'i',i,'j',j,cobalt%f_chl(i,j,1)
-         write(*,*)  'Temp ',               'i',i,'j',j,Temp(i,j,1)
+         ! write(*,*)  'dmsp_zeu ',           'i',i,'j',j,cobalt%dmsp_zeu(i, j)
+         ! write(*,*)  'dmspos_strat ',       'i',i,'j',j,cobalt%dmspos_strat(i, j)
+         ! write(*,*)  'log10zeu ',           'i',i,'j',j,log10zeu
+         ! write(*,*)  'log10dmspos_strat ',  'i',i,'j',j,log10dmsp_strat
+         ! write(*,*)  'f_chl ',              'i',i,'j',j,cobalt%f_chl(i,j,1)
+         ! write(*,*)  'Temp ',               'i',i,'j',j,Temp(i,j,1)
 
          ! ! Condition for selecting mixed or stratified model
          ! if (pic(i, j) < 1.5 .or. f_zeu_mld(i, j) < 1.0) then
@@ -5901,13 +5901,12 @@ contains
     deallocate(phos_nh3_exchange)
 !
 ! check dmspos_strat output
-    write(*,*)  'dmsp_zeu output check ',           cobalt%dmsp_zeu
-    write(*,*)  'dmspos_strat output check ',       cobalt%dmspos_strat
-    write(*,*)  'log10zeu output check ',           log10zeu
-    write(*,*)  'log10dmspos_strat output check ',  log10dmsp_strat
-    write(*,*)  'f_chl output check ',              cobalt%f_chl
-    write(*,*)  'Temp output check ',               Temp
-! write(*,*)  'Rho_0 output check ',            cobalt%Rho_0
+   !  write(*,*)  'dmsp_zeu output check ',           cobalt%dmsp_zeu
+   !  write(*,*)  'dmspos_strat output check ',       cobalt%dmspos_strat
+   !  write(*,*)  'log10zeu output check ',           log10zeu
+   !  write(*,*)  'log10dmspos_strat output check ',  log10dmsp_strat
+   !  write(*,*)  'f_chl output check ',              cobalt%f_chl(:,:,1)
+   !  write(*,*)  'Temp output check ',               Temp(:,:,1)
 
 !
 !---------------------------------------------------------------------
@@ -6478,6 +6477,8 @@ contains
     if (do_nh3_diag) allocate(cobalt%f_nh3(isd:ied, jsd:jed, 1:nk))        ; cobalt%f_nh3=0.0
     !for DMS diagnostics
     allocate(cobalt%dmsp_zeu(isd:ied, jsd:jed))           ; cobalt%dmsp_zeu=0.0
+    allocate(cobalt%dmsp_zeu_mld(isd:ied, jsd:jed))       ; cobalt%dmsp_zeu_mld=0.0
+    allocate(cobalt%dmspos_mix(isd:ied, jsd:jed))       ; cobalt%dmspos_mix=0.0
     allocate(cobalt%dmspos_strat(isd:ied, jsd:jed))       ; cobalt%dmspos_strat=0.0
     allocate(cobalt%f_co3_ion(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_co3_ion=0.0
     allocate(cobalt%f_htotal(isd:ied, jsd:jed, 1:nk))     ; cobalt%f_htotal=0.0
@@ -7297,6 +7298,8 @@ contains
     deallocate(cobalt%mask_z_sat_calc)
 !DMS diagnostics
     deallocate(cobalt%dmsp_zeu)
+    deallocate(cobalt%dmsp_zeu_mld)
+    deallocate(cobalt%dmspos_mix)
     deallocate(cobalt%dmspos_strat)
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem

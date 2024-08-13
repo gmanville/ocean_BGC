@@ -2349,6 +2349,14 @@ module COBALT_send_diag
         model_time, rmask = grid_tmask(:,:,1),&
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
 
+        used = g_send_data(cobalt%id_dmsp_zeu_mld,  cobalt%dmsp_zeu_mld,   &
+        model_time, rmask = grid_tmask(:,:,1),&
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+        used = g_send_data(cobalt%id_dmspos_mix,  cobalt%dmspos_mix,   &
+        model_time, rmask = grid_tmask(:,:,1),&
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
         used = g_send_data(cobalt%id_dmspos_strat,  cobalt%dmspos_strat,   &
         model_time, rmask = grid_tmask(:,:,1),&
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
