@@ -552,7 +552,9 @@ module cobalt_types
           dmsp_zeu,&
           dmsp_zeu_mld,&
           dmspos_mix,&
-          dmspos_strat
+          dmspos_strat,&
+          dmsos_mix,&
+          dmsos_strat
 
      real, dimension(:,:,:), ALLOCATABLE ::  &
           f_alk,&				! Other prognostic variables
@@ -1278,6 +1280,8 @@ module cobalt_types
           id_dmsp_zeu_mld   = -1, &          
           id_dmspos_mix     = -1, &
           id_dmspos_strat   = -1, &          
+          id_dmsos_mix     = -1, &
+          id_dmsos_strat   = -1, &          
           id_nh4_cmip       = -1, &
           id_po4_cmip       = -1, &
           id_dfe            = -1, &

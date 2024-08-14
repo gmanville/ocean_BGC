@@ -2269,9 +2269,11 @@ contains
     real :: log10zeu
     real :: log10dmsp_mix
     real :: log10dmsp_strat
-   !  real :: dms_alpha
-   !  real :: dms_beta
-   !  real :: dms_gamma
+    real :: dms_alpha
+    real :: dms_beta
+    real :: dms_gamma
+    real :: log10dms_mix
+    real :: log10dms_strat
 
     logical ::  phos_nh3_override
 
@@ -2743,6 +2745,7 @@ contains
           if (max_wavelength_band(nb) .lt. 710.0) then !{
              tmp_irr_band(nb) = cobalt%par_adj*sw_pen_band(nb,i,j)
              sfc_irrad(i,j) = sfc_irrad(i,j) + cobalt%par_adj*sw_pen_band(nb,i,j)
+            !  cobalt%sfc_irrad(i,j) = sfc_irrad(i,j) * grid_tmask(i,j,1)
           else
              tmp_irr_band(nb) = 0.0
           endif !}
@@ -4964,11 +4967,13 @@ contains
       cobalt%dmspos_mix(:,:)      = 0.
       cobalt%dmspos_strat(:,:)    = 0.
       ! cobalt%dmspos(:,:)        = 0.
+      cobalt%dmsos_mix(:,:)       = 0.
+      cobalt%dmsos_strat(:,:)     = 0.
       ! cobalt%dmsos(:,:)         = 0.
    
-      ! dms_alpha = -1.237
-      ! dms_beta = 0.578
-      ! dms_gamma = 0.0180
+      dms_alpha = -1.237
+      dms_beta = 0.578
+      dms_gamma = 0.0180
 
       do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
 
@@ -4982,9 +4987,6 @@ contains
          cobalt%dmsp_zeu_mld(i, j) = cobalt%dmsp_zeu(i, j) / cobalt%mld_aclm(i,j)   ! also need to be * grid_tmask(i,j,1)?
 
          ! ! Mixed water column model
-         ! log10dmsp_mix(i, j) = 1.74 + (0.81 * log10(chl(i, j))) + (0.6 * log10(dmsp_zeu_mld(i, j)))
-         ! f_dmspos_mix(i, j) = 10.0 ** log10dmsp_mix(i, j)
-
          log10dmsp_mix = 1.74 + (0.81 * log10(max(0.0,cobalt%f_chl(i,j,1)))) + (0.6 * log10(max(0.0,cobalt%dmsp_zeu_mld(i,j))))
          cobalt%dmspos_mix(i, j) = ((10.0 ** log10dmsp_mix) / 1e9) * grid_tmask(i,j,1)     ! convert from nmol m-3 to mol m-3 (mol L-1)
 
@@ -5012,8 +5014,15 @@ contains
          ! f_dmspos(i, j) = 10.0 ** log10dmsp(i, j)
 
          ! ! DMS regression model
-         ! log10dms(i, j) = alpha + beta * log10dmsp(i, j) + gamma * sfc_irrad(i, j)
-         ! f_dmsos(i, j) = 10.0 ** log10dms(i, j)
+         ! log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * sfc_irrad(i, j))
+         ! cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
+         log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
+         
+         ! log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * sfc_irrad(i, j))
+         ! cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
+         log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
 
       enddo;  enddo ; enddo !} i,j,k
     end if
@@ -6478,8 +6487,10 @@ contains
     !for DMS diagnostics
     allocate(cobalt%dmsp_zeu(isd:ied, jsd:jed))           ; cobalt%dmsp_zeu=0.0
     allocate(cobalt%dmsp_zeu_mld(isd:ied, jsd:jed))       ; cobalt%dmsp_zeu_mld=0.0
-    allocate(cobalt%dmspos_mix(isd:ied, jsd:jed))       ; cobalt%dmspos_mix=0.0
+    allocate(cobalt%dmspos_mix(isd:ied, jsd:jed))         ; cobalt%dmspos_mix=0.0
     allocate(cobalt%dmspos_strat(isd:ied, jsd:jed))       ; cobalt%dmspos_strat=0.0
+    allocate(cobalt%dmsos_mix(isd:ied, jsd:jed))          ; cobalt%dmsos_mix=0.0
+    allocate(cobalt%dmsos_strat(isd:ied, jsd:jed))        ; cobalt%dmsos_strat=0.0
     allocate(cobalt%f_co3_ion(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_co3_ion=0.0
     allocate(cobalt%f_htotal(isd:ied, jsd:jed, 1:nk))     ; cobalt%f_htotal=0.0
     allocate(cobalt%f_irr_aclm(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_irr_aclm=0.0
@@ -7301,6 +7312,8 @@ contains
     deallocate(cobalt%dmsp_zeu_mld)
     deallocate(cobalt%dmspos_mix)
     deallocate(cobalt%dmspos_strat)
+    deallocate(cobalt%dmsos_mix)
+    deallocate(cobalt%dmsos_strat)
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem
     deallocate(cobalt%f_alk_int_100)
