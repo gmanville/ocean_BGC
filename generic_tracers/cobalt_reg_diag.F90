@@ -3391,21 +3391,29 @@ module COBALT_reg_diag
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
 
      vardesc_temp = vardesc("dmspos_strat","Surface concentration of DMSP using Stratified Model",'h','1','s','mol m-3','f')
-     cobalt%id_dmspos_strat     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+     cobalt%id_dmspos_strat   = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
           init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
 
-     vardesc_temp = vardesc("dmsos_mix","Surface concentration of DMS using Mixed Model",'h','1','s','mol m-3','f')
-     cobalt%id_dmsos_mix     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+     vardesc_temp = vardesc("sfc_irr_aclm_24","Surface day irrad. over photacclim. time scale 24h int.",'h','1','s','W m-2','f')
+     cobalt%id_irr_aclm_sfc_24 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+     
+     vardesc_temp = vardesc("irr_sfc_dms","Surface irrad. in units for DMS calculation",'h','1','s','mol photons m-2 d-1','f')
+     cobalt%id_irr_sfc_dms = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+           
+!     vardesc_temp = vardesc("dmsos","Surface concentration of DMS",'h','1','s','mol m-3','f')
+!     cobalt%id_dmsos     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+!          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
+
+     vardesc_temp = vardesc("dmsos_strat","Surface concentration of DMS using Stratified Model",'h','1','s','mol m-3','f')
+     cobalt%id_dmsos_strat     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
           init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
 
      vardesc_temp = vardesc("dmsos_strat","Surface concentration of DMS using Stratified Model",'h','1','s','mol m-3','f')
      cobalt%id_dmsos_strat     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
           init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
-     
-!     vardesc_temp = vardesc("dmsos","Surface concentration of DMS",'h','1','s','mol m-3','f')
-!     cobalt%id_dmsos     = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
-!          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)        
-
+               
     vardesc_temp = vardesc("dissicos_raw","Surface Dissolved Inorganic Carbon Concentration",'h','1','s','mol m-3','f')
     cobalt%id_dissicos = register_diag_field(package_name, vardesc_temp%name, axes(1:2), &
          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1, &

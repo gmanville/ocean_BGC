@@ -2369,6 +2369,14 @@ module COBALT_send_diag
         model_time, rmask = grid_tmask(:,:,1),&
         is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
 
+        used = g_send_data(cobalt%id_irr_aclm_sfc_24,  cobalt%irr_aclm_sfc_24,   &
+        model_time, rmask = grid_tmask(:,:,1),&
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
+        used = g_send_data(cobalt%id_irr_sfc_dms,  cobalt%irr_sfc_dms,   &
+        model_time, rmask = grid_tmask(:,:,1),&
+        is_in=isc, js_in=jsc, ie_in=iec, je_in=jec)
+
 !==============================================================================================================
 
     end subroutine cobalt_send_diagnostics   

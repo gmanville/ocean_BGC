@@ -4967,10 +4967,14 @@ contains
       cobalt%dmspos_mix(:,:)      = 0.
       cobalt%dmspos_strat(:,:)    = 0.
       ! cobalt%dmspos(:,:)        = 0.
+      cobalt%irr_aclm_sfc_24(:,:) = 0.
+      cobalt%irr_sfc_dms(:,:)     = 0.
       cobalt%dmsos_mix(:,:)       = 0.
       cobalt%dmsos_strat(:,:)     = 0.
       ! cobalt%dmsos(:,:)         = 0.
    
+      !real, parameter :: dms_alpha
+      !
       dms_alpha = -1.237
       dms_beta = 0.578
       dms_gamma = 0.0180
@@ -5012,16 +5016,30 @@ contains
          !    log10dmsp(i, j) = log10dmsp_strat(i, j)
          ! end if
          ! f_dmspos(i, j) = 10.0 ** log10dmsp(i, j)
+         
+         ! ! Undo daylength adjustment to get 24h integrated irr
+         cobalt%irr_aclm_sfc_24(i,j) = cobalt%f_irr_aclm_sfc(i,j,1) * (max(cobalt%daylength(i,j),cobalt%min_daylength) / 24.0) * grid_tmask(i,j,1)
+
+         ! ! Unit conversion: W m-2 to mol photons m-2 d-1
+         cobalt%irr_sfc_dms(i,j) = (((cobalt%irr_aclm_sfc_24(i,j) * (2.77e18 / 6.022e17)) / 1e6) * 86400) * grid_tmask(i,j,1)
 
          ! ! DMS regression model
          ! log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * sfc_irrad(i, j))
          ! cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
-         log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         ! log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         ! cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
+         ! log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * cobalt%f_irr_aclm_sfc(i,j,1))
+         ! cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
+         log10dms_mix = dms_alpha + (dms_beta * log10dmsp_mix) + (dms_gamma * cobalt%irr_sfc_dms(i,j))
          cobalt%dmsos_mix(i, j) = ((10.0 ** log10dms_mix) / 1e9) * grid_tmask(i,j,1)
          
          ! log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * sfc_irrad(i, j))
          ! cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
-         log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         ! log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * cobalt%irr_inst(i,j,1))
+         ! cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
+         ! log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * cobalt%f_irr_aclm_sfc(i,j,1))
+         ! cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
+         log10dms_strat = dms_alpha + (dms_beta * log10dmsp_strat) + (dms_gamma * cobalt%irr_sfc_dms(i,j))
          cobalt%dmsos_strat(i, j) = ((10.0 ** log10dms_strat) / 1e9) * grid_tmask(i,j,1)
 
       enddo;  enddo ; enddo !} i,j,k
@@ -6491,6 +6509,8 @@ contains
     allocate(cobalt%dmspos_strat(isd:ied, jsd:jed))       ; cobalt%dmspos_strat=0.0
     allocate(cobalt%dmsos_mix(isd:ied, jsd:jed))          ; cobalt%dmsos_mix=0.0
     allocate(cobalt%dmsos_strat(isd:ied, jsd:jed))        ; cobalt%dmsos_strat=0.0
+    allocate(cobalt%irr_aclm_sfc_24(isd:ied, jsd:jed))  ; cobalt%irr_aclm_sfc_24=0.0
+    allocate(cobalt%irr_sfc_dms(isd:ied, jsd:jed))        ; cobalt%irr_sfc_dms=0.0
     allocate(cobalt%f_co3_ion(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_co3_ion=0.0
     allocate(cobalt%f_htotal(isd:ied, jsd:jed, 1:nk))     ; cobalt%f_htotal=0.0
     allocate(cobalt%f_irr_aclm(isd:ied, jsd:jed, 1:nk))    ; cobalt%f_irr_aclm=0.0
@@ -7314,6 +7334,8 @@ contains
     deallocate(cobalt%dmspos_strat)
     deallocate(cobalt%dmsos_mix)
     deallocate(cobalt%dmsos_strat)
+    deallocate(cobalt%irr_aclm_sfc_24)
+    deallocate(cobalt%irr_sfc_dms)
 !==============================================================================================================
 ! JGJ 2016/08/08 CMIP6 OcnBgchem
     deallocate(cobalt%f_alk_int_100)

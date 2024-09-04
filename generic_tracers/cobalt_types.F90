@@ -554,7 +554,9 @@ module cobalt_types
           dmspos_mix,&
           dmspos_strat,&
           dmsos_mix,&
-          dmsos_strat
+          dmsos_strat,&
+          irr_aclm_sfc_24,&    
+          irr_sfc_dms        
 
      real, dimension(:,:,:), ALLOCATABLE ::  &
           f_alk,&				! Other prognostic variables
@@ -1109,7 +1111,7 @@ module cobalt_types
           id_sfc_o2        = -1,       &
           id_sfc_chl       = -1,       &
           id_sfc_irr       = -1,       &
-          id_sfc_irr_aclm   = -1,       &
+          id_sfc_irr_aclm   = -1,      &
           id_sfc_temp      = -1,       &
           id_btm_temp      = -1,       &
           id_btm_temp_old  = -1,       &
@@ -1280,8 +1282,10 @@ module cobalt_types
           id_dmsp_zeu_mld   = -1, &          
           id_dmspos_mix     = -1, &
           id_dmspos_strat   = -1, &          
-          id_dmsos_mix     = -1, &
-          id_dmsos_strat   = -1, &          
+          id_dmsos_mix      = -1, &
+          id_dmsos_strat    = -1, &          
+          id_irr_aclm_sfc_24 = -1, &          
+          id_irr_sfc_dms    = -1, &          
           id_nh4_cmip       = -1, &
           id_po4_cmip       = -1, &
           id_dfe            = -1, &
